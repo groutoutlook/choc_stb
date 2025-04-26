@@ -15,21 +15,17 @@ alias td := todo
 todo todo_arg=default_arg:
     rg {{todo_arg}} -g '!justfile' -g "!third_party" 
 
-hello:
-    @Write-Host "Hello, world!" -ForegroundColor Yellow
-
-placeholder args="nothing":
+wt:
     #!{{ shebang }}
-    Write-Host "Havent written build task for this repo." -ForegroundColor Red
-    if($env:pwsh_env) {Write-Host "$env:pwsh_env and {{args}} as ``just`` args"}
-    else {Write-Host "Apparently no .env as well" -ForegroundColor Yellow}
+    wt -f new-tab -p "Developer PowerShell for VS 2022" -d  {{ invocation_directory() }} --tabColor '#FFFFFF'
 
 alias b := build
-build: (placeholder "from build") 
+build: 
+    #nothing...
 
 alias fmt := format
 format args="nothing":
-    # format something as `biome format --write`
+    clang-format -i *.hpp
 
 # INFO: basic `run` recipe.
 alias r := run
@@ -39,5 +35,5 @@ run args=default_args:
 
 var_test := "test format"
 alias t := test
-test *args=var_test: (format args) && (placeholder "'from test'") 
+test:
     # also something directly test behaviour.
