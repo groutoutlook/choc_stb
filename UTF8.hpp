@@ -529,166 +529,168 @@ inline UTF8Pointer UTF8Pointer::findEndOfLine() const
 
 	return l;
 }
-
 inline UTF8Pointer::Iterator UTF8Pointer::begin() const
 {
-	UTF8Pointer::EndIterator UTF8Pointer::end() const
+	return Iterator(text);
+}
+
+inline UTF8Pointer::EndIterator UTF8Pointer::end() const
+{
+	return EndIterator();
+}
+
+inline LineAndColumn findLineAndColumn(UTF8Pointer start, UTF8Pointer targetPosition)
+{
+	if (start == nullptr || targetPosition == nullptr)
+		return {};
+
+	LineAndColumn lc{1, 1};
+
+	while (start < targetPosition && !start.empty())
 	{
-		return EndIterator();
-	}
-
-	inline LineAndColumn findLineAndColumn(UTF8Pointer start, UTF8Pointer targetPosition)
-	{
-		if (start == nullptr || targetPosition == nullptr)
-			return {};
-
-		LineAndColumn lc{1, 1};
-
-		while (start < targetPosition && !start.empty())
+		++lc.column;
+		if (*start++ == '\n')
 		{
-			++lc.column;
-			if (*start++ == '\n')
-			{
-				lc.line++;
-				lc.column = 1;
-			}
+			lc.line++;
+			lc.column = 1;
 		}
-
-		return lc;
 	}
 
-	inline std::string LineAndColumn::toString() const
+	return lc;
+}
+
+inline std::string LineAndColumn::toString() const
+{
+	return std::to_string(line) + ':' + std::to_string(column);
+}
+
+//==============================================================================
+inline uint32_t convertUnicodeCodepointToUTF8(char *dest, UnicodeChar unicodeChar)
+{
+	if (unicodeChar < 0x80)
 	{
-		return std::to_string(line) + ':' + std::to_string(column);
+		*dest = static_cast<char>(unicodeChar);
+		return 1;
 	}
 
-	//==============================================================================
-	inline uint32_t convertUnicodeCodepointToUTF8(char *dest, UnicodeChar unicodeChar)
+	uint32_t extraBytes = 1;
+
+	if (unicodeChar >= 0x800)
 	{
-		if (unicodeChar < 0x80)
-		{
-			*dest = static_cast<char>(unicodeChar);
-			return 1;
-		}
+		++extraBytes;
 
-		uint32_t extraBytes = 1;
-
-		if (unicodeChar >= 0x800)
-		{
+		if (unicodeChar >= 0x10000)
 			++extraBytes;
-
-			if (unicodeChar >= 0x10000)
-				++extraBytes;
-		}
-
-		dest[0] = static_cast<char>((0xffu << (7 - extraBytes)) | (unicodeChar >> (extraBytes * 6)));
-
-		for (uint32_t i = 1; i <= extraBytes; ++i)
-			dest[i] = static_cast<char>(0x80u | (0x3fu & (unicodeChar >> ((extraBytes - i) * 6))));
-
-		return extraBytes + 1;
 	}
 
-	inline void appendUTF8(std::string & target, UnicodeChar unicodeChar)
-	{
-		char bytes[4];
-		auto num = convertUnicodeCodepointToUTF8(bytes, unicodeChar);
-		target.append(bytes, num);
-	}
+	dest[0] = static_cast<char>((0xffu << (7 - extraBytes)) | (unicodeChar >> (extraBytes * 6)));
 
-	inline bool isUnicodeHighSurrogate(UnicodeChar codepoint)
-	{
-		return codepoint >= 0xd800 && codepoint <= 0xdbff;
-	}
-	inline bool isUnicodeLowSurrogate(UnicodeChar codepoint)
-	{
-		return codepoint >= 0xdc00 && codepoint <= 0xdfff;
-	}
+	for (uint32_t i = 1; i <= extraBytes; ++i)
+		dest[i] = static_cast<char>(0x80u | (0x3fu & (unicodeChar >> ((extraBytes - i) * 6))));
 
-	inline UnicodeChar createUnicodeFromHighAndLowSurrogates(SurrogatePair pair)
-	{
-		if (!isUnicodeHighSurrogate(pair.high))
-			return pair.high;
-		if (!isUnicodeLowSurrogate(pair.low))
-			return 0;
+	return extraBytes + 1;
+}
 
-		return (pair.high << 10) + pair.low - 0x35fdc00u;
+inline void appendUTF8(std::string &target, UnicodeChar unicodeChar)
+{
+	char bytes[4];
+	auto num = convertUnicodeCodepointToUTF8(bytes, unicodeChar);
+	target.append(bytes, num);
+}
+
+inline bool isUnicodeHighSurrogate(UnicodeChar codepoint)
+{
+	return codepoint >= 0xd800 && codepoint <= 0xdbff;
+}
+inline bool isUnicodeLowSurrogate(UnicodeChar codepoint)
+{
+	return codepoint >= 0xdc00 && codepoint <= 0xdfff;
+}
+
+inline UnicodeChar createUnicodeFromHighAndLowSurrogates(SurrogatePair pair)
+{
+	if (!isUnicodeHighSurrogate(pair.high))
+		return pair.high;
+	if (!isUnicodeLowSurrogate(pair.low))
+		return 0;
+
+	return (pair.high << 10) + pair.low - 0x35fdc00u;
+}
+
+inline bool containsSurrogatePairs(UTF8Pointer text)
+{
+	for (;;)
+	{
+		auto c = text.popFirstChar();
+
+		if (c == 0)
+			return false;
+
+		if (isUnicodeHighSurrogate(c))
+			return true;
 	}
+}
 
-	inline bool containsSurrogatePairs(UTF8Pointer text)
+inline std::string convertSurrogatePairsToUTF8(UTF8Pointer text)
+{
+	std::string result;
+
+	for (;;)
 	{
-		for (;;)
+		auto c = text.popFirstChar();
+
+		if (choc::text::isUnicodeHighSurrogate(c))
+			c = createUnicodeFromHighAndLowSurrogates({c, text.popFirstChar()});
+
+		if (c == 0)
+			return result;
+
+		appendUTF8(result, c);
+	}
+}
+
+inline SurrogatePair splitCodePointIntoSurrogatePair(UnicodeChar fullCodePoint)
+{
+	return {static_cast<UnicodeChar>(0xd800u + ((fullCodePoint - 0x10000u) >> 10)),
+	        static_cast<UnicodeChar>(0xdc00u + (fullCodePoint & 0x3ffu))};
+}
+
+inline bool isValidCESU8(std::string_view utf8)
+{
+	for (auto c : utf8)
+		if (static_cast<uint8_t>(c) >= 0xe8)
+			return false;
+
+	return true;
+}
+
+inline std::string convertUTF8ToCESU8(UTF8Pointer utf8)
+{
+	std::string result;
+
+	for (;;)
+	{
+		auto c = utf8.popFirstChar();
+
+		if (c == 0)
+			return result;
+
+		if (c < 128)
 		{
-			auto c = text.popFirstChar();
-
-			if (c == 0)
-				return false;
-
-			if (isUnicodeHighSurrogate(c))
-				return true;
+			result += (char) c;
 		}
-	}
-
-	inline std::string convertSurrogatePairsToUTF8(UTF8Pointer text)
-	{
-		std::string result;
-
-		for (;;)
+		else if (c >= 0x10000)
 		{
-			auto c = text.popFirstChar();
-
-			if (choc::text::isUnicodeHighSurrogate(c))
-				c = createUnicodeFromHighAndLowSurrogates({c, text.popFirstChar()});
-
-			if (c == 0)
-				return result;
-
+			auto pair = splitCodePointIntoSurrogatePair(c);
+			appendUTF8(result, pair.high);
+			appendUTF8(result, pair.low);
+		}
+		else
+		{
 			appendUTF8(result, c);
 		}
 	}
-
-	inline SurrogatePair splitCodePointIntoSurrogatePair(UnicodeChar fullCodePoint)
-	{
-		return {static_cast<UnicodeChar>(0xd800u + ((fullCodePoint - 0x10000u) >> 10)),
-		        static_cast<UnicodeChar>(0xdc00u + (fullCodePoint & 0x3ffu))};
-	}
-
-	inline bool isValidCESU8(std::string_view utf8)
-	{
-		for (auto c : utf8)
-			if (static_cast<uint8_t>(c) >= 0xe8)
-				return false;
-
-		return true;
-	}
-
-	inline std::string convertUTF8ToCESU8(UTF8Pointer utf8)
-	{
-		std::string result;
-
-		for (;;)
-		{
-			auto c = utf8.popFirstChar();
-
-			if (c == 0)
-				return result;
-
-			if (c < 128)
-			{
-				result += (char) c;
-			}
-			else if (c >= 0x10000)
-			{
-				auto pair = splitCodePointIntoSurrogatePair(c);
-				appendUTF8(result, pair.high);
-				appendUTF8(result, pair.low);
-			}
-			else
-			{
-				appendUTF8(result, c);
-			}
-		}
-	}
+}
 
 }        // namespace choc::text
 

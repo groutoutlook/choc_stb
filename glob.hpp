@@ -1,7 +1,7 @@
 #ifndef CHOC_WILDCARD_HEADER_INCLUDED
 #define CHOC_WILDCARD_HEADER_INCLUDED
 
-#include "../text/choc_UTF8.h"
+#include "UTF8.hpp"
 
 namespace choc::text
 {

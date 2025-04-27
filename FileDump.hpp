@@ -11,7 +11,6 @@
 
 namespace choc::file
 {
-
 /// A file handling error, thrown by some of the functions in this namespace.
 struct Error : public std::runtime_error
 {
@@ -19,7 +18,6 @@ struct Error : public std::runtime_error
 	    std::runtime_error(error)
 	{}
 };
-
 /// Attempts to read the entire contents of the given file into memory,
 /// throwing an Error exception if anything goes wrong. The lambda argument will be
 /// called with the amount of space needed as a uint64_t parameter, and it must
@@ -227,6 +225,96 @@ inline std::string makeSafeFilename(std::string_view source, size_t maxLength)
 		return "_";
 
 	return name;
+}
+
+}        // namespace choc::file
+
+
+namespace choc::file{
+//==============================================================================
+/// A self-deleting temp file or folder.
+struct TempFile
+{
+	TempFile();
+	TempFile(TempFile &&)                 = default;
+	TempFile &operator=(TempFile &&)      = default;
+	TempFile(const TempFile &)            = delete;
+	TempFile &operator=(const TempFile &) = delete;
+	~TempFile();
+
+	/// Creates a temporary folder with the given name, which will be recursively deleted
+	/// when this object is destroyed.
+	TempFile(std::string_view subFolderName);
+
+	/// Creates the specified folder in the system temporary directory, and sets the
+	/// TempFile::file member to point to the given filename within it.
+	/// The file (but not the folder) will be deleted when this object is destroyed.
+	TempFile(std::string_view subFolderName, std::string_view filename);
+
+	/// Creates the specified folder in the system temporary directory, and sets the
+	/// TempFile::file member to be a randomly chosen filename within it, based on the
+	/// supplied file root and suffix.
+	/// The file (but not the folder) will be deleted when this object is destroyed.
+	/// So for example TempFile ("foo", "bar", "txt") may create a file with a name such
+	/// as "/tmp/foo/bar_12345.txt".
+	TempFile(std::string_view subFolderName,
+	         std::string_view filenameRoot,
+	         std::string_view filenameSuffix);
+
+	/// Creates a filename by adding a random integer suffix to a prefix string, and
+	/// appending a file type suffix. E.g. createRandomFilename ("foo", "txt") may
+	/// return something like "foo_12345.txt"
+	static std::string createRandomFilename(std::string_view filenameRoot,
+	                                        std::string_view filenameSuffix);
+
+	/// The temp file that has been selected. When the TempFile is destroyed, this
+	/// file will be deleted (recursively if it is a folder).
+	std::filesystem::path file;
+};
+
+
+//==============================================================================
+inline TempFile::TempFile() = default;
+
+inline TempFile::TempFile(std::string_view folder)
+{
+	file = std::filesystem::temp_directory_path();
+
+	if (!folder.empty())
+	{
+		file = file / folder;
+		create_directories(file);
+	}
+}
+
+inline TempFile::TempFile(std::string_view folder, std::string_view filename) :
+    TempFile(folder)
+{
+	file = file / filename;
+}
+
+inline TempFile::TempFile(std::string_view folder, std::string_view root, std::string_view suffix) :
+    TempFile(folder, createRandomFilename(root, suffix))
+{
+}
+
+inline std::string TempFile::createRandomFilename(std::string_view root, std::string_view suffix)
+{
+	std::random_device              seed;
+	std::mt19937                    rng(seed());
+	std::uniform_int_distribution<> dist(1, 99999999);
+	auto                            randomID = std::to_string(static_cast<uint32_t>(dist(rng)));
+	auto                            name     = std::string(root) + "_" + randomID;
+
+	if (!suffix.empty())
+		name += (suffix[0] == '.' ? "" : ".") + std::string(suffix);
+
+	return name;
+}
+
+inline TempFile::~TempFile()
+{
+	remove_all(file);
 }
 
 }        // namespace choc::file

@@ -8,6 +8,7 @@
 #include <cwctype>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace choc::text
@@ -542,7 +543,8 @@ size_t getLevenshteinDistance(const StringType &string1, const StringType &strin
 			costs[i] = i;
 
 		size_t p1 = 0;
-
+		#undef min
+		#undef max
 		for (auto c1 : s1)
 		{
 			auto corner = p1;

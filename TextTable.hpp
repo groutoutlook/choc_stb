@@ -1,7 +1,7 @@
 #ifndef CHOC_TEXT_TABLE_HEADER_INCLUDED
 #define CHOC_TEXT_TABLE_HEADER_INCLUDED
 
-#include "StringUtils.h"
+#include "StringUtils.hpp"
 
 namespace choc::text
 {
