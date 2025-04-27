@@ -16,6 +16,7 @@ set(CHOC_SOURCES
     UTF8.hpp
     FileWatch.hpp
     TextTable.hpp
+    glob.hpp
 )
 
 add_library(${PROJECT_NAME}  STATIC ${CHOC_SOURCES} )
