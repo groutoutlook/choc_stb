@@ -1,8 +1,8 @@
 #ifndef CHOC_UTF8_HEADER_INCLUDED
 #define CHOC_UTF8_HEADER_INCLUDED
 
-#include <cstddef>
 #include "StringUtils.hpp"
+#include <cstddef>
 
 namespace choc::text
 {
@@ -16,194 +16,253 @@ using UnicodeChar = uint32_t;
 */
 struct UTF8Pointer
 {
-    explicit constexpr UTF8Pointer (const char* utf8Text) noexcept  : text (utf8Text) {}
+	explicit constexpr UTF8Pointer(const char *utf8Text) noexcept :
+	    text(utf8Text)
+	{}
 
-    UTF8Pointer() = default;
-    UTF8Pointer (const UTF8Pointer&) = default;
-    UTF8Pointer& operator= (const UTF8Pointer&) = default;
+	UTF8Pointer()                               = default;
+	UTF8Pointer(const UTF8Pointer &)            = default;
+	UTF8Pointer &operator=(const UTF8Pointer &) = default;
 
-    /// Returns the raw data that this points to.
-    const char* data() const noexcept                   { return text; }
+	/// Returns the raw data that this points to.
+	const char *data() const noexcept
+	{
+		return text;
+	}
 
-    /// Returns true if the pointer is not null.
-    operator bool() const noexcept                      { return text != nullptr; }
+	/// Returns true if the pointer is not null.
+	operator bool() const noexcept
+	{
+		return text != nullptr;
+	}
 
-    /// Returns true if the pointer is either null or points to a null terminator char.
-    bool empty() const                                  { return text == nullptr || *text == 0; }
+	/// Returns true if the pointer is either null or points to a null terminator char.
+	bool empty() const
+	{
+		return text == nullptr || *text == 0;
+	}
 
-    /// Returns the length by iterating all unicode chars and counting them.
-    /// Note that this is slow, and is not a count of the number of bytes in the string!
-    size_t length() const;
+	/// Returns the length by iterating all unicode chars and counting them.
+	/// Note that this is slow, and is not a count of the number of bytes in the string!
+	size_t length() const;
 
-    //==============================================================================
-    /// Returns the first unicode character in the string.
-    UnicodeChar operator*() const;
+	//==============================================================================
+	/// Returns the first unicode character in the string.
+	UnicodeChar operator*() const;
 
-    /// Skips past the first unicode character.
-    /// Moving beyond the end of the string is undefined behaviour and will trigger an assertion.
-    UTF8Pointer& operator++();
+	/// Skips past the first unicode character.
+	/// Moving beyond the end of the string is undefined behaviour and will trigger an assertion.
+	UTF8Pointer &operator++();
 
-    /// Skips past the first unicode character.
-    /// Moving beyond the end of the string is undefined behaviour and will trigger an assertion.
-    UTF8Pointer operator++ (int);
+	/// Skips past the first unicode character.
+	/// Moving beyond the end of the string is undefined behaviour and will trigger an assertion.
+	UTF8Pointer operator++(int);
 
-    /// Moves backwards to the previous unicode character.
-    /// Moving beyond the end of the string is undefined behaviour.
-    UTF8Pointer operator--();
+	/// Moves backwards to the previous unicode character.
+	/// Moving beyond the end of the string is undefined behaviour.
+	UTF8Pointer operator--();
 
-    /// Skips past the given number of unicode characters.
-    /// Moving beyond the end of the string is undefined behaviour and will trigger an assertion.
-    UTF8Pointer& operator+= (size_t numCharsToSkip);
+	/// Skips past the given number of unicode characters.
+	/// Moving beyond the end of the string is undefined behaviour and will trigger an assertion.
+	UTF8Pointer &operator+=(size_t numCharsToSkip);
 
-    /// Returns a pointer which points to the n-th unicode character in the text
-    /// Reading beyond the end of the string is undefined behaviour and may trigger an assertion.
-    UTF8Pointer operator+ (size_t numCharsToSkip) const;
+	/// Returns a pointer which points to the n-th unicode character in the text
+	/// Reading beyond the end of the string is undefined behaviour and may trigger an assertion.
+	UTF8Pointer operator+(size_t numCharsToSkip) const;
 
-    /// Returns a pointer which points to the n-th unicode character in the text.
-    /// Reading beyond the end of the string is undefined behaviour and may trigger an assertion.
-    UTF8Pointer operator+ (int numCharsToSkip) const;
+	/// Returns a pointer which points to the n-th unicode character in the text.
+	/// Reading beyond the end of the string is undefined behaviour and may trigger an assertion.
+	UTF8Pointer operator+(int numCharsToSkip) const;
 
-    /// Skips past the first unicode character and returns it as a code-point.
-    /// Calling this when the current character is the terminator will leave the pointer in an
-    /// invalid state.
-    UnicodeChar popFirstChar();
+	/// Skips past the first unicode character and returns it as a code-point.
+	/// Calling this when the current character is the terminator will leave the pointer in an
+	/// invalid state.
+	UnicodeChar popFirstChar();
 
-    /// Finds the next occurrence of the given string, or return a nullptr if not found.
-    UTF8Pointer find (const char* textToFind) const;
+	/// Finds the next occurrence of the given string, or return a nullptr if not found.
+	UTF8Pointer find(const char *textToFind) const;
 
-    /// Returns true if the text starts with this string
-    bool startsWith (const char* textToMatch) const;
+	/// Returns true if the text starts with this string
+	bool startsWith(const char *textToMatch) const;
 
-    /// If the first character matches the given one, this will advance the pointer and return true.
-    bool skipIfStartsWith (char charToMatch);
+	/// If the first character matches the given one, this will advance the pointer and return true.
+	bool skipIfStartsWith(char charToMatch);
 
-    /// If the start of the text matches the given string, this will advance this pointer to skip
-    /// past it, and return true. If not, it will return false without modifying this pointer.
-    bool skipIfStartsWith (const char* textToMatch);
+	/// If the start of the text matches the given string, this will advance this pointer to skip
+	/// past it, and return true. If not, it will return false without modifying this pointer.
+	bool skipIfStartsWith(const char *textToMatch);
 
-    /// Returns a pointer to the first non-whitespace character in the given string (which may
-    /// be the terminating null character if it's all whitespace).
-    [[nodiscard]] UTF8Pointer findEndOfWhitespace() const;
+	/// Returns a pointer to the first non-whitespace character in the given string (which may
+	/// be the terminating null character if it's all whitespace).
+	[[nodiscard]] UTF8Pointer findEndOfWhitespace() const;
 
-    /// Iterates backwards from this position to find the first character that follows
-    /// a new-line. The pointer provided marks the furthest back that the function should search
-    [[nodiscard]] UTF8Pointer findStartOfLine (UTF8Pointer startOfValidText) const;
+	/// Iterates backwards from this position to find the first character that follows
+	/// a new-line. The pointer provided marks the furthest back that the function should search
+	[[nodiscard]] UTF8Pointer findStartOfLine(UTF8Pointer startOfValidText) const;
 
-    /// Searches forwards for the next character that is followed by a new-line or a null-terminator.
-    [[nodiscard]] UTF8Pointer findEndOfLine() const;
+	/// Searches forwards for the next character that is followed by a new-line or a null-terminator.
+	[[nodiscard]] UTF8Pointer findEndOfLine() const;
 
-    //==============================================================================
-    struct EndIterator {};
+	//==============================================================================
+	struct EndIterator
+	{};
 
-    struct Iterator
-    {
-        explicit constexpr Iterator (const char* t) : text (t) {}
-        Iterator (const Iterator&) = default;
-        Iterator& operator= (const Iterator&) = default;
+	struct Iterator
+	{
+		explicit constexpr Iterator(const char *t) :
+		    text(t)
+		{}
+		Iterator(const Iterator &)            = default;
+		Iterator &operator=(const Iterator &) = default;
 
-        UnicodeChar operator*() const           { return *UTF8Pointer (text); }
-        Iterator& operator++()                  { UTF8Pointer p (text); ++p; text = p.text; return *this; }
-        Iterator operator++ (int)               { auto old = *this; ++*this; return old; }
-        bool operator== (EndIterator) const     { return *text == 0; }
-        bool operator!= (EndIterator) const     { return *text != 0; }
+		UnicodeChar operator*() const
+		{
+			return *UTF8Pointer(text);
+		}
+		Iterator &operator++()
+		{
+			UTF8Pointer p(text);
+			++p;
+			text = p.text;
+			return *this;
+		}
+		Iterator operator++(int)
+		{
+			auto old = *this;
+			++*this;
+			return old;
+		}
+		bool operator==(EndIterator) const
+		{
+			return *text == 0;
+		}
+		bool operator!=(EndIterator) const
+		{
+			return *text != 0;
+		}
 
-    private:
-        const char* text;
-    };
+	  private:
+		const char *text;
+	};
 
-    Iterator begin() const;
-    EndIterator end() const;
+	Iterator    begin() const;
+	EndIterator end() const;
 
-    //==============================================================================
-    /// This does a pointer comparison, NOT a comparison of the text itself!
-    bool operator== (UTF8Pointer other) const noexcept      { return text == other.text; }
-    /// This does a pointer comparison, NOT a comparison of the text itself!
-    bool operator!= (UTF8Pointer other) const noexcept      { return text != other.text; }
-    /// This does a pointer comparison, NOT a comparison of the text itself!
-    bool operator<  (UTF8Pointer other) const noexcept      { return text <  other.text; }
-    /// This does a pointer comparison, NOT a comparison of the text itself!
-    bool operator>  (UTF8Pointer other) const noexcept      { return text >  other.text; }
-    /// This does a pointer comparison, NOT a comparison of the text itself!
-    bool operator<= (UTF8Pointer other) const noexcept      { return text <= other.text; }
-    /// This does a pointer comparison, NOT a comparison of the text itself!
-    bool operator>= (UTF8Pointer other) const noexcept      { return text >= other.text; }
+	//==============================================================================
+	/// This does a pointer comparison, NOT a comparison of the text itself!
+	bool operator==(UTF8Pointer other) const noexcept
+	{
+		return text == other.text;
+	}
+	/// This does a pointer comparison, NOT a comparison of the text itself!
+	bool operator!=(UTF8Pointer other) const noexcept
+	{
+		return text != other.text;
+	}
+	/// This does a pointer comparison, NOT a comparison of the text itself!
+	bool operator<(UTF8Pointer other) const noexcept
+	{
+		return text < other.text;
+	}
+	/// This does a pointer comparison, NOT a comparison of the text itself!
+	bool operator>(UTF8Pointer other) const noexcept
+	{
+		return text > other.text;
+	}
+	/// This does a pointer comparison, NOT a comparison of the text itself!
+	bool operator<=(UTF8Pointer other) const noexcept
+	{
+		return text <= other.text;
+	}
+	/// This does a pointer comparison, NOT a comparison of the text itself!
+	bool operator>=(UTF8Pointer other) const noexcept
+	{
+		return text >= other.text;
+	}
 
-    bool operator== (decltype(nullptr)) const noexcept      { return text == nullptr; }
-    bool operator!= (decltype(nullptr)) const noexcept      { return text != nullptr; }
+	bool operator==(decltype(nullptr)) const noexcept
+	{
+		return text == nullptr;
+	}
+	bool operator!=(decltype(nullptr)) const noexcept
+	{
+		return text != nullptr;
+	}
 
-private:
-    const char* text = nullptr;
+  private:
+	const char *text = nullptr;
 };
 
 //==============================================================================
 /// Checks a given chunk of data to see whether it's valid UTF-8.
 /// If no errors are found, this returns nullptr. If an error is found, it returns the address
 /// of the offending byte. Note that zero bytes in the data are considered to be valid UTF-8.
-const char* findInvalidUTF8Data (const void* dataToCheck, size_t numBytesToRead);
+const char *findInvalidUTF8Data(const void *dataToCheck, size_t numBytesToRead);
 
 /// Writes the bytes for a unicode character, and returns the number of bytes that were needed.
 /// The buffer passed in needs to have at least 4 bytes capacity.
-uint32_t convertUnicodeCodepointToUTF8 (char* dest, UnicodeChar codepoint);
+uint32_t convertUnicodeCodepointToUTF8(char *dest, UnicodeChar codepoint);
 
 /// Appends a unicode codepoint to a std::string as a sequence of UTF-8 bytes.
-void appendUTF8 (std::string& target, UnicodeChar codepoint);
+void appendUTF8(std::string &target, UnicodeChar codepoint);
 
 /// Checks whether a given codepoint is a high-surrogate
-bool isUnicodeHighSurrogate (UnicodeChar codepoint);
+bool isUnicodeHighSurrogate(UnicodeChar codepoint);
 
 /// Checks whether a given codepoint is a low-surrogate
-bool isUnicodeLowSurrogate (UnicodeChar codepoint);
+bool isUnicodeLowSurrogate(UnicodeChar codepoint);
 
 struct SurrogatePair
 {
-    UnicodeChar high = 0, low = 0;
+	UnicodeChar high = 0, low = 0;
 };
 
 /// For a codepoint >= 0x10000, this will return a surrogate pair to represent it.
-SurrogatePair splitCodePointIntoSurrogatePair (UnicodeChar fullCodePoint);
+SurrogatePair splitCodePointIntoSurrogatePair(UnicodeChar fullCodePoint);
 
 /// Combines a high and low surrogate into a single codepoint.
-UnicodeChar createUnicodeFromHighAndLowSurrogates (SurrogatePair);
+UnicodeChar createUnicodeFromHighAndLowSurrogates(SurrogatePair);
 
 /// Checks a UTF-8/CESU-8 string to see if it contains any surrogate pairs.
 /// If it does, then to use it as UTF-8 you'll probably need to run it through
 /// convertSurrogatePairsToUTF8().
-bool containsSurrogatePairs (UTF8Pointer);
+bool containsSurrogatePairs(UTF8Pointer);
 
 /// Returns a string where any surrogate pairs have been converted to UTF-8 codepoints.
-std::string convertSurrogatePairsToUTF8 (UTF8Pointer);
+std::string convertSurrogatePairsToUTF8(UTF8Pointer);
 
 /// Returns true if the given UTF-8 string can be used as CESU-8 without conversion. If not,
 /// you'll need to run it through convertUTF8ToCESU8() to convert the 32-bit code-points
 /// to surrogate pairs.
-bool isValidCESU8 (std::string_view utf8);
+bool isValidCESU8(std::string_view utf8);
 
 /// Converts any 32-bit characters in this UTF-8 string to surrogate pairs, which makes
 /// the resulting string suitable for use at CESU-8.
-[[nodiscard]] std::string convertUTF8ToCESU8 (UTF8Pointer);
-
+[[nodiscard]] std::string convertUTF8ToCESU8(UTF8Pointer);
 
 //==============================================================================
 /// Represents a line and column index within a block of text.
 struct LineAndColumn
 {
-    /// Valid line and column values start at 1.
-    /// If either is 0, it means that the LineAndColumn object is uninitialised.
-    size_t line = 0, column = 0;
+	/// Valid line and column values start at 1.
+	/// If either is 0, it means that the LineAndColumn object is uninitialised.
+	size_t line = 0, column = 0;
 
-    /// Returns true if neither the line nor column is zero.
-    bool isValid() const noexcept          { return line != 0 && column != 0; }
+	/// Returns true if neither the line nor column is zero.
+	bool isValid() const noexcept
+	{
+		return line != 0 && column != 0;
+	}
 
-    /// Turns this location into a [line]:[col] string suitable for use in a
-    /// standard compiler error message format.
-    std::string toString() const;
+	/// Turns this location into a [line]:[col] string suitable for use in a
+	/// standard compiler error message format.
+	std::string toString() const;
 };
 
 /// Given a block of text and a position within it, this will work out the
 /// line and column of that position.
-LineAndColumn findLineAndColumn (UTF8Pointer fullText,
-                                 UTF8Pointer targetPosition);
-
+LineAndColumn findLineAndColumn(UTF8Pointer fullText,
+                                UTF8Pointer targetPosition);
 
 //==============================================================================
 //        _        _           _  _
@@ -218,406 +277,419 @@ LineAndColumn findLineAndColumn (UTF8Pointer fullText,
 
 inline size_t UTF8Pointer::length() const
 {
-    size_t count = 0;
+	size_t count = 0;
 
-    if (text != nullptr)
-        for (auto p = *this; *p.text != 0; ++p)
-            ++count;
+	if (text != nullptr)
+		for (auto p = *this; *p.text != 0; ++p)
+			++count;
 
-    return count;
+	return count;
 }
 
-inline const char* findInvalidUTF8Data (const void* dataToCheck, size_t numBytes)
+inline const char *findInvalidUTF8Data(const void *dataToCheck, size_t numBytes)
 {
-    auto source = static_cast<const char*> (dataToCheck);
-    const auto end = source + numBytes;
+	auto       source = static_cast<const char *>(dataToCheck);
+	const auto end    = source + numBytes;
 
-    for (;;)
-    {
-        if (source >= end)
-            return nullptr;
+	for (;;)
+	{
+		if (source >= end)
+			return nullptr;
 
-        auto byte = static_cast<signed char> (*source);
+		auto byte = static_cast<signed char>(*source);
 
-        if (byte >= 0)
-        {
-            ++source;
-            continue;
-        }
+		if (byte >= 0)
+		{
+			++source;
+			continue;
+		}
 
-        int testBit = 0x40, numExtraBytes = 0;
+		int testBit = 0x40, numExtraBytes = 0;
 
-        while ((byte & testBit) != 0)
-        {
-            testBit >>= 1;
-            ++numExtraBytes;
+		while ((byte & testBit) != 0)
+		{
+			testBit >>= 1;
+			++numExtraBytes;
 
-            if (numExtraBytes > 3
-                || source + static_cast<size_t> (numExtraBytes) >= end
-                || (numExtraBytes == 3 && *UTF8Pointer (source) > 0x10ffff))
-            {
-                return source;
-            }
-        }
+			if (numExtraBytes > 3 || source + static_cast<size_t>(numExtraBytes) >= end || (numExtraBytes == 3 && *UTF8Pointer(source) > 0x10ffff))
+			{
+				return source;
+			}
+		}
 
-        if (numExtraBytes == 0)
-            return source;
+		if (numExtraBytes == 0)
+			return source;
 
-        ++source;
+		++source;
 
-        for (int i = 0; i < numExtraBytes; ++i)
-        {
-            if ((*source & 0xc0) != 0x80)
-                return source;
+		for (int i = 0; i < numExtraBytes; ++i)
+		{
+			if ((*source & 0xc0) != 0x80)
+				return source;
 
-            ++source;
-        }
-    }
+			++source;
+		}
+	}
 }
 
 inline UnicodeChar UTF8Pointer::operator*() const
 {
-    return UTF8Pointer (*this).popFirstChar();
+	return UTF8Pointer(*this).popFirstChar();
 }
 
-inline UTF8Pointer& UTF8Pointer::operator++()
+inline UTF8Pointer &UTF8Pointer::operator++()
 {
-    auto firstByte = static_cast<signed char> (*text++);
+	auto firstByte = static_cast<signed char>(*text++);
 
-    if (firstByte >= 0)
-        return *this;
+	if (firstByte >= 0)
+		return *this;
 
-    uint32_t testBit = 0x40, unicodeChar = static_cast<unsigned char> (firstByte);
+	uint32_t testBit = 0x40, unicodeChar = static_cast<unsigned char>(firstByte);
 
-    while ((unicodeChar & testBit) != 0 && testBit > 8)
-    {
-        ++text;
-        testBit >>= 1;
-    }
+	while ((unicodeChar & testBit) != 0 && testBit > 8)
+	{
+		++text;
+		testBit >>= 1;
+	}
 
-    return *this;
+	return *this;
 }
 
-inline UTF8Pointer UTF8Pointer::operator++ (int)
+inline UTF8Pointer UTF8Pointer::operator++(int)
 {
-    auto prev = *this;
-    operator++();
-    return prev;
+	auto prev = *this;
+	operator++();
+	return prev;
 }
 
 inline UTF8Pointer UTF8Pointer::operator--()
 {
-    uint32_t bytesSkipped = 0;
+	uint32_t bytesSkipped = 0;
 
-    while ((*--text & 0xc0) == 0x80)
-    {
-        if (bytesSkipped > 2)
-        {
-            break;
-        }
+	while ((*--text & 0xc0) == 0x80)
+	{
+		if (bytesSkipped > 2)
+		{
+			break;
+		}
 
-        ++bytesSkipped;
-    }
+		++bytesSkipped;
+	}
 
-    return *this;
+	return *this;
 }
 
-inline UTF8Pointer& UTF8Pointer::operator+= (size_t numCharsToSkip)
+inline UTF8Pointer &UTF8Pointer::operator+=(size_t numCharsToSkip)
 {
-    while (numCharsToSkip != 0)
-    {
-        --numCharsToSkip;
-        operator++();
-    }
+	while (numCharsToSkip != 0)
+	{
+		--numCharsToSkip;
+		operator++();
+	}
 
-    return *this;
+	return *this;
 }
 
-inline UTF8Pointer UTF8Pointer::operator+ (size_t numCharsToSkip) const
+inline UTF8Pointer UTF8Pointer::operator+(size_t numCharsToSkip) const
 {
-    auto p = *this;
-    p += numCharsToSkip;
-    return p;
+	auto p = *this;
+	p += numCharsToSkip;
+	return p;
 }
 
-inline UTF8Pointer UTF8Pointer::operator+ (int numCharsToSkip) const
+inline UTF8Pointer UTF8Pointer::operator+(int numCharsToSkip) const
 {
-    return operator+ (static_cast<size_t> (numCharsToSkip));
+	return operator+(static_cast<size_t>(numCharsToSkip));
 }
 
 inline UnicodeChar UTF8Pointer::popFirstChar()
 {
-    auto firstByte = static_cast<signed char> (*text++);
-    UnicodeChar unicodeChar = static_cast<unsigned char> (firstByte);
+	auto        firstByte   = static_cast<signed char>(*text++);
+	UnicodeChar unicodeChar = static_cast<unsigned char>(firstByte);
 
-    if (firstByte < 0)
-    {
-        uint32_t bitMask = 0x7f, numExtraBytes = 0;
+	if (firstByte < 0)
+	{
+		uint32_t bitMask = 0x7f, numExtraBytes = 0;
 
-        for (uint32_t testBit = 0x40; (unicodeChar & testBit) != 0 && testBit > 8; ++numExtraBytes)
-        {
-            bitMask >>= 1;
-            testBit >>= 1;
-        }
+		for (uint32_t testBit = 0x40; (unicodeChar & testBit) != 0 && testBit > 8; ++numExtraBytes)
+		{
+			bitMask >>= 1;
+			testBit >>= 1;
+		}
 
-        unicodeChar &= bitMask;
+		unicodeChar &= bitMask;
 
-        for (uint32_t i = 0; i < numExtraBytes; ++i)
-        {
-            uint32_t nextByte = static_cast<unsigned char> (*text);
+		for (uint32_t i = 0; i < numExtraBytes; ++i)
+		{
+			uint32_t nextByte = static_cast<unsigned char>(*text);
 
-            // gets validated before iterating a UTF8Pointer over it
+			// gets validated before iterating a UTF8Pointer over it
 
-            unicodeChar = (unicodeChar << 6) | (nextByte & 0x3f);
-            ++text;
-        }
-    }
+			unicodeChar = (unicodeChar << 6) | (nextByte & 0x3f);
+			++text;
+		}
+	}
 
-    return unicodeChar;
+	return unicodeChar;
 }
 
-inline bool UTF8Pointer::startsWith (const char* textToMatch) const
+inline bool UTF8Pointer::startsWith(const char *textToMatch) const
 {
-    
-if (auto p = text)
-    {
-        while (*textToMatch != 0)
-            if (*textToMatch++ != *p++)
-                return false;
+	if (auto p = text)
+	{
+		while (*textToMatch != 0)
+			if (*textToMatch++ != *p++)
+				return false;
 
-        return true;
-    }
+		return true;
+	}
 
-    return false;
+	return false;
 }
 
-inline UTF8Pointer UTF8Pointer::find (const char* textToFind) const
+inline UTF8Pointer UTF8Pointer::find(const char *textToFind) const
 {
-    
-for (auto t = *this;; ++t)
-        if (t.startsWith (textToFind) || t.empty())
-            return t;
+	for (auto t = *this;; ++t)
+		if (t.startsWith(textToFind) || t.empty())
+			return t;
 }
 
-inline bool UTF8Pointer::skipIfStartsWith (char charToMatch)
+inline bool UTF8Pointer::skipIfStartsWith(char charToMatch)
 {
-    if (text != nullptr && *text == charToMatch && charToMatch != 0)
-    {
-        ++text;
-        return true;
-    }
+	if (text != nullptr && *text == charToMatch && charToMatch != 0)
+	{
+		++text;
+		return true;
+	}
 
-    return false;
+	return false;
 }
 
-inline bool UTF8Pointer::skipIfStartsWith (const char* textToMatch)
+inline bool UTF8Pointer::skipIfStartsWith(const char *textToMatch)
 {
-    
-if (auto p = text)
-    {
-        while (*textToMatch != 0)
-            if (*textToMatch++ != *p++)
-                return false;
+	if (auto p = text)
+	{
+		while (*textToMatch != 0)
+			if (*textToMatch++ != *p++)
+				return false;
 
-        text = p;
-        return true;
-    }
+		text = p;
+		return true;
+	}
 
-    return false;
+	return false;
 }
 
 inline UTF8Pointer UTF8Pointer::findEndOfWhitespace() const
 {
-    auto p = *this;
+	auto p = *this;
 
-    if (p.text != nullptr)
-        while (choc::text::isWhitespace (*p.text))
-            ++p;
+	if (p.text != nullptr)
+		while (choc::text::isWhitespace(*p.text))
+			++p;
 
-    return p;
+	return p;
 }
 
-inline UTF8Pointer UTF8Pointer::findStartOfLine (UTF8Pointer start) const
+inline UTF8Pointer UTF8Pointer::findStartOfLine(UTF8Pointer start) const
 {
-    if (text == nullptr)
-        return {};
+	if (text == nullptr)
+		return {};
 
-    auto l = *this;
-    
-while (l.text > start.text)
-    {
-        auto prev = l;
-        auto c = *--prev;
+	auto l = *this;
 
-        if (c == '\r' || c == '\n')
-            break;
+	while (l.text > start.text)
+	{
+		auto prev = l;
+		auto c    = *--prev;
 
-        l = prev;
-    }
+		if (c == '\r' || c == '\n')
+			break;
 
-    return l;
+		l = prev;
+	}
+
+	return l;
 }
 
 inline UTF8Pointer UTF8Pointer::findEndOfLine() const
 {
-    if (text == nullptr)
-        return {};
+	if (text == nullptr)
+		return {};
 
-    auto l = *this;
+	auto l = *this;
 
-    while (! l.empty())
-    {
-        auto c = l.popFirstChar();
+	while (!l.empty())
+	{
+		auto c = l.popFirstChar();
 
-        if (c == '\r' || c == '\n')
-            break;
-    }
+		if (c == '\r' || c == '\n')
+			break;
+	}
 
-    return l;
+	return l;
 }
 
-inline UTF8Pointer::Iterator UTF8Pointer::begin() const      { UTF8Pointer::EndIterator UTF8Pointer::end() const     { return EndIterator(); }
-
-inline LineAndColumn findLineAndColumn (UTF8Pointer start, UTF8Pointer targetPosition)
+inline UTF8Pointer::Iterator UTF8Pointer::begin() const
 {
-    if (start == nullptr || targetPosition == nullptr)
-        return {};
+	UTF8Pointer::EndIterator UTF8Pointer::end() const
+	{
+		return EndIterator();
+	}
 
-    LineAndColumn lc { 1, 1 };
+	inline LineAndColumn findLineAndColumn(UTF8Pointer start, UTF8Pointer targetPosition)
+	{
+		if (start == nullptr || targetPosition == nullptr)
+			return {};
 
-    while (start < targetPosition && ! start.empty())
-    {
-        ++lc.column;
-        if (*start++ == '\n')  { lc.line++; lc.column = 1; }
-    }
+		LineAndColumn lc{1, 1};
 
-    return lc;
-}
+		while (start < targetPosition && !start.empty())
+		{
+			++lc.column;
+			if (*start++ == '\n')
+			{
+				lc.line++;
+				lc.column = 1;
+			}
+		}
 
-inline std::string LineAndColumn::toString() const   { return std::to_string (line) + ':' + std::to_string (column); }
+		return lc;
+	}
 
-//==============================================================================
-inline uint32_t convertUnicodeCodepointToUTF8 (char* dest, UnicodeChar unicodeChar)
-{
-    if (unicodeChar < 0x80)
-    {
-        *dest = static_cast<char> (unicodeChar);
-        return 1;
-    }
+	inline std::string LineAndColumn::toString() const
+	{
+		return std::to_string(line) + ':' + std::to_string(column);
+	}
 
-    uint32_t extraBytes = 1;
+	//==============================================================================
+	inline uint32_t convertUnicodeCodepointToUTF8(char *dest, UnicodeChar unicodeChar)
+	{
+		if (unicodeChar < 0x80)
+		{
+			*dest = static_cast<char>(unicodeChar);
+			return 1;
+		}
 
-    if (unicodeChar >= 0x800)
-    {
-        ++extraBytes;
+		uint32_t extraBytes = 1;
 
-        if (unicodeChar >= 0x10000)
-            ++extraBytes;
-    }
+		if (unicodeChar >= 0x800)
+		{
+			++extraBytes;
 
-    dest[0] = static_cast<char> ((0xffu << (7 - extraBytes)) | (unicodeChar >> (extraBytes * 6)));
+			if (unicodeChar >= 0x10000)
+				++extraBytes;
+		}
 
-    for (uint32_t i = 1; i <= extraBytes; ++i)
-        dest[i] = static_cast<char> (0x80u | (0x3fu & (unicodeChar >> ((extraBytes - i) * 6))));
+		dest[0] = static_cast<char>((0xffu << (7 - extraBytes)) | (unicodeChar >> (extraBytes * 6)));
 
-    return extraBytes + 1;
-}
+		for (uint32_t i = 1; i <= extraBytes; ++i)
+			dest[i] = static_cast<char>(0x80u | (0x3fu & (unicodeChar >> ((extraBytes - i) * 6))));
 
-inline void appendUTF8 (std::string& target, UnicodeChar unicodeChar)
-{
-    char bytes[4];
-    auto num = convertUnicodeCodepointToUTF8 (bytes, unicodeChar);
-    target.append (bytes, num);
-}
+		return extraBytes + 1;
+	}
 
-inline bool isUnicodeHighSurrogate (UnicodeChar codepoint)   { return codepoint >= 0xd800 && codepoint <= 0xdbff; }
-inline bool isUnicodeLowSurrogate  (UnicodeChar codepoint)   { return codepoint >= 0xdc00 && codepoint <= 0xdfff; }
+	inline void appendUTF8(std::string & target, UnicodeChar unicodeChar)
+	{
+		char bytes[4];
+		auto num = convertUnicodeCodepointToUTF8(bytes, unicodeChar);
+		target.append(bytes, num);
+	}
 
-inline UnicodeChar createUnicodeFromHighAndLowSurrogates (SurrogatePair pair)
-{
-    if (! isUnicodeHighSurrogate (pair.high))   return pair.high;
-    if (! isUnicodeLowSurrogate (pair.low))     return 0;
+	inline bool isUnicodeHighSurrogate(UnicodeChar codepoint)
+	{
+		return codepoint >= 0xd800 && codepoint <= 0xdbff;
+	}
+	inline bool isUnicodeLowSurrogate(UnicodeChar codepoint)
+	{
+		return codepoint >= 0xdc00 && codepoint <= 0xdfff;
+	}
 
-    return (pair.high << 10) + pair.low - 0x35fdc00u;
-}
+	inline UnicodeChar createUnicodeFromHighAndLowSurrogates(SurrogatePair pair)
+	{
+		if (!isUnicodeHighSurrogate(pair.high))
+			return pair.high;
+		if (!isUnicodeLowSurrogate(pair.low))
+			return 0;
 
-inline bool containsSurrogatePairs (UTF8Pointer text)
-{
-    for (;;)
-    {
-        auto c = text.popFirstChar();
+		return (pair.high << 10) + pair.low - 0x35fdc00u;
+	}
 
-        if (c == 0)
-            return false;
+	inline bool containsSurrogatePairs(UTF8Pointer text)
+	{
+		for (;;)
+		{
+			auto c = text.popFirstChar();
 
-        if (isUnicodeHighSurrogate (c))
-            return true;
-    }
-}
+			if (c == 0)
+				return false;
 
-inline std::string convertSurrogatePairsToUTF8 (UTF8Pointer text)
-{
-    std::string result;
+			if (isUnicodeHighSurrogate(c))
+				return true;
+		}
+	}
 
-    for (;;)
-    {
-        auto c = text.popFirstChar();
+	inline std::string convertSurrogatePairsToUTF8(UTF8Pointer text)
+	{
+		std::string result;
 
-        if (choc::text::isUnicodeHighSurrogate (c))
-            c = createUnicodeFromHighAndLowSurrogates ({ c, text.popFirstChar() });
+		for (;;)
+		{
+			auto c = text.popFirstChar();
 
-        if (c == 0)
-            return result;
+			if (choc::text::isUnicodeHighSurrogate(c))
+				c = createUnicodeFromHighAndLowSurrogates({c, text.popFirstChar()});
 
-        appendUTF8 (result, c);
-    }
-}
+			if (c == 0)
+				return result;
 
-inline SurrogatePair splitCodePointIntoSurrogatePair (UnicodeChar fullCodePoint)
-{
-    
-return { static_cast<UnicodeChar> (0xd800u + ((fullCodePoint - 0x10000u) >> 10)),
-             static_cast<UnicodeChar> (0xdc00u + (fullCodePoint & 0x3ffu)) };
-}
+			appendUTF8(result, c);
+		}
+	}
 
-inline bool isValidCESU8 (std::string_view utf8)
-{
-    for (auto c : utf8)
-        if (static_cast<uint8_t> (c) >= 0xe8)
-            return false;
+	inline SurrogatePair splitCodePointIntoSurrogatePair(UnicodeChar fullCodePoint)
+	{
+		return {static_cast<UnicodeChar>(0xd800u + ((fullCodePoint - 0x10000u) >> 10)),
+		        static_cast<UnicodeChar>(0xdc00u + (fullCodePoint & 0x3ffu))};
+	}
 
-    return true;
-}
+	inline bool isValidCESU8(std::string_view utf8)
+	{
+		for (auto c : utf8)
+			if (static_cast<uint8_t>(c) >= 0xe8)
+				return false;
 
-inline std::string convertUTF8ToCESU8 (UTF8Pointer utf8)
-{
-    std::string result;
+		return true;
+	}
 
-    for (;;)
-    {
-        auto c = utf8.popFirstChar();
+	inline std::string convertUTF8ToCESU8(UTF8Pointer utf8)
+	{
+		std::string result;
 
-        if (c == 0)
-            return result;
+		for (;;)
+		{
+			auto c = utf8.popFirstChar();
 
-        if (c < 128)
-        {
-            result += (char) c;
-        }
-        else if (c >= 0x10000)
-        {
-            auto pair = splitCodePointIntoSurrogatePair (c);
-            appendUTF8 (result, pair.high);
-            appendUTF8 (result, pair.low);
-        }
-        else
-        {
-            appendUTF8 (result, c);
-        }
-    }
-}
+			if (c == 0)
+				return result;
 
+			if (c < 128)
+			{
+				result += (char) c;
+			}
+			else if (c >= 0x10000)
+			{
+				auto pair = splitCodePointIntoSurrogatePair(c);
+				appendUTF8(result, pair.high);
+				appendUTF8(result, pair.low);
+			}
+			else
+			{
+				appendUTF8(result, c);
+			}
+		}
+	}
 
-} // namespace choc::text
+}        // namespace choc::text
 
 #endif
