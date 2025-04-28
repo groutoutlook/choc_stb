@@ -1,2 +1,5 @@
 tests/.vs
 tests/out
+.vs
+bin
+out

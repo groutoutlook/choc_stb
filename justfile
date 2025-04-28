@@ -25,7 +25,7 @@ build:
 
 alias fmt := format
 format args="nothing":
-    clang-format -i *.hpp
+    clang-format -i *.hpp 
 
 # INFO: basic `run` recipe.
 alias r := run

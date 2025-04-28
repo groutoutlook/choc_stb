@@ -229,8 +229,8 @@ inline std::string makeSafeFilename(std::string_view source, size_t maxLength)
 
 }        // namespace choc::file
 
-
-namespace choc::file{
+namespace choc::file
+{
 //==============================================================================
 /// A self-deleting temp file or folder.
 struct TempFile
@@ -271,7 +271,6 @@ struct TempFile
 	/// file will be deleted (recursively if it is a folder).
 	std::filesystem::path file;
 };
-
 
 //==============================================================================
 inline TempFile::TempFile() = default;

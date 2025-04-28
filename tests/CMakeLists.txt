@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(choc_tests)
 
-add_executable(choc_tests main.cpp main2.cpp)
+add_executable(choc_tests main.cpp)
 
 # To test V8, there needs to be a suitable folder somewhere with a build
 # set(V8_LOCATION "/Users/jules/code/v8")
@@ -12,7 +12,10 @@ add_executable(choc_tests main.cpp main2.cpp)
 # folder at this location:
 # set(BOOST_LOCATION "/Users/jules/code/cmajor-dev/cmajor/3rdParty/boost")
 
+# INFO: you need FetchContent, CPM, vcpkg, conan,... I dont care about methods.
+target_link_libraries (choc_tests PRIVATE choc_stb)
 target_compile_features(choc_tests PRIVATE cxx_std_23)
+
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR
     CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -56,7 +59,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR
     endif()
 
     target_compile_features(choc_tests PRIVATE cxx_std_17)
-
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 
     set(CompilerFlags

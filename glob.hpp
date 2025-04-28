@@ -17,29 +17,33 @@ namespace choc::text
 */
 struct glob
 {
-    glob() = default;
-    glob (glob&&) = default;
-    glob& operator= (glob&&) = default;
+	glob()                   = default;
+	glob(glob &&)            = default;
+	glob &operator=(glob &&) = default;
 
-    /// Creates a matcher for the given pattern.
-    glob (std::string_view pattern, bool caseSensitive);
+	/// Creates a matcher for the given pattern.
+	glob(std::string_view pattern, bool caseSensitive);
 
-    /// Returns true if the given string matches the pattern.
-    bool matches (const std::string& text) const;
+	/// Returns true if the given string matches the pattern.
+	bool matches(const std::string &text) const;
 
-    /// You can iterate the pattern strings within the wildcard
-    std::vector<std::string>::iterator begin()  { return patterns.begin(); }
-    std::vector<std::string>::iterator end()    { return patterns.end(); }
+	/// You can iterate the pattern strings within the wildcard
+	std::vector<std::string>::iterator begin()
+	{
+		return patterns.begin();
+	}
+	std::vector<std::string>::iterator end()
+	{
+		return patterns.end();
+	}
 
-private:
-    std::vector<std::string> patterns;
-    bool isCaseSensitive;
+  private:
+	std::vector<std::string> patterns;
+	bool                     isCaseSensitive;
 
-    bool matchesAnywhere (choc::text::UTF8Pointer, choc::text::UTF8Pointer) const;
-    bool matchesAll (choc::text::UTF8Pointer, choc::text::UTF8Pointer) const;
+	bool matchesAnywhere(choc::text::UTF8Pointer, choc::text::UTF8Pointer) const;
+	bool matchesAll(choc::text::UTF8Pointer, choc::text::UTF8Pointer) const;
 };
-
-
 
 //==============================================================================
 //        _        _           _  _
@@ -52,60 +56,58 @@ private:
 //
 //==============================================================================
 
-inline glob::glob (std::string_view pattern, bool caseSensitive)
-    : isCaseSensitive (caseSensitive)
+inline glob::glob(std::string_view pattern, bool caseSensitive) :
+    isCaseSensitive(caseSensitive)
 {
-    for (auto& p : choc::text::splitString (pattern, ';', false))
-        patterns.push_back (choc::text::trim (p));
+	for (auto &p : choc::text::splitString(pattern, ';', false))
+		patterns.push_back(choc::text::trim(p));
 }
 
-inline bool glob::matches (const std::string& text) const
+inline bool glob::matches(const std::string &text) const
 {
-    if (patterns.empty())
-        return true;
+	if (patterns.empty())
+		return true;
 
-    choc::text::UTF8Pointer t (text.c_str());
+	choc::text::UTF8Pointer t(text.c_str());
 
-    for (auto& p : patterns)
-        if (matchesAll (t, choc::text::UTF8Pointer (p.c_str())))
-            return true;
+	for (auto &p : patterns)
+		if (matchesAll(t, choc::text::UTF8Pointer(p.c_str())))
+			return true;
 
-    return false;
+	return false;
 }
 
-inline bool glob::matchesAnywhere (choc::text::UTF8Pointer source, choc::text::UTF8Pointer pattern) const
+inline bool glob::matchesAnywhere(choc::text::UTF8Pointer source, choc::text::UTF8Pointer pattern) const
 {
-    while (! source.empty())
-    {
-        if (matchesAll (source, pattern))
-            return true;
+	while (!source.empty())
+	{
+		if (matchesAll(source, pattern))
+			return true;
 
-        ++source;
-    }
+		++source;
+	}
 
-    return false;
+	return false;
 }
 
-inline bool glob::matchesAll (choc::text::UTF8Pointer source, choc::text::UTF8Pointer pattern) const
+inline bool glob::matchesAll(choc::text::UTF8Pointer source, choc::text::UTF8Pointer pattern) const
 {
-    for (;;)
-    {
-        auto patternChar = pattern.popFirstChar();
+	for (;;)
+	{
+		auto patternChar = pattern.popFirstChar();
 
-        if (patternChar == '*')
-            return pattern.empty() || matchesAnywhere (source, pattern);
+		if (patternChar == '*')
+			return pattern.empty() || matchesAnywhere(source, pattern);
 
-        auto sourceChar = source.popFirstChar();
+		auto sourceChar = source.popFirstChar();
 
-        if (! (sourceChar == patternChar
-                || (! isCaseSensitive && std::towupper (static_cast<std::wint_t> (sourceChar)) == std::towupper (static_cast<std::wint_t> (patternChar)))
-                || (patternChar == '?' && sourceChar != 0)))
-            return false;
+		if (!(sourceChar == patternChar || (!isCaseSensitive && std::towupper(static_cast<std::wint_t>(sourceChar)) == std::towupper(static_cast<std::wint_t>(patternChar))) || (patternChar == '?' && sourceChar != 0)))
+			return false;
 
-        if (patternChar == 0)
-            return true;
-    }
+		if (patternChar == 0)
+			return true;
+	}
 }
-} // namespace choc::text
+}        // namespace choc::text
 
-#endif // CHOC_WILDCARD_HEADER_INCLUDED
+#endif        // CHOC_WILDCARD_HEADER_INCLUDED

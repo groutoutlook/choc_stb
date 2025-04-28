@@ -1,4 +1,4 @@
-#include "choc_tests.h"
+#include "choc_tests.hpp"
 #include "choc_ArgumentList.hpp"
 
 //==============================================================================

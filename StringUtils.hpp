@@ -1,6 +1,5 @@
 #ifndef CHOC_STRING_UTILS_HEADER_INCLUDED
 #define CHOC_STRING_UTILS_HEADER_INCLUDED
-
 #include <algorithm>
 #include <cctype>
 #include <chrono>
@@ -13,7 +12,6 @@
 
 namespace choc::text
 {
-
 //==============================================================================
 inline bool isWhitespace(char c)
 {
@@ -543,8 +541,8 @@ size_t getLevenshteinDistance(const StringType &string1, const StringType &strin
 			costs[i] = i;
 
 		size_t p1 = 0;
-		#undef min
-		#undef max
+#undef min
+#undef max
 		for (auto c1 : s1)
 		{
 			auto corner = p1;
@@ -625,10 +623,7 @@ inline std::string percentEncodeURI(std::string_view text)
 			result += "0123456789abcdef"[static_cast<uint8_t>(c) & 15u];
 		}
 	}
-
 	return result;
 }
-
 }        // namespace choc::text
-
 #endif
