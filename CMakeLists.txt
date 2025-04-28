@@ -11,14 +11,8 @@ if (PROJECT_IS_TOP_LEVEL)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 endif()
 
-set(CHOC_SOURCES
-    StringUtils.hpp
-    UTF8.hpp
-    FileWatch.hpp
-    TextTable.hpp
-    glob.hpp
-)
-
+# Collect all .hpp files in the current directory only (non-recursive)
+file(GLOB CHOC_SOURCES "*.hpp")
 
 # Create an interface library for header-only usage
 add_library(${PROJECT_NAME} INTERFACE)

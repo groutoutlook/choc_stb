@@ -1,11 +1,36 @@
 #ifndef CHOC_TESTS_HEADER_INCLUDED
 #define CHOC_TESTS_HEADER_INCLUDED
-#include "../FileDump.hpp"
-#include "../FileWatch.hpp"
-#include "../StringUtils.hpp"
-#include "../TextTable.hpp"
-#include "../UTF8.hpp"
-#include "../glob.hpp"
+#include "DirtyList.hpp"
+#include "FileDump.hpp"
+#include "FileWatch.hpp"
+#include "StringUtils.hpp"
+#include "TextTable.hpp"
+#include "UTF8.hpp"
+#include "glob.hpp"
+// A simple struct to represent objects managed by DirtyList, e.g., audio processors.
+// Includes isDirty member to satisfy DirtyList::resetAll requirement.
+struct TestObject
+{
+	int  value{0};
+	bool isDirty{false};
+};
+namespace std
+{
+// Convert TestObject to a string for debugging and test output
+inline std::string to_string(TestObject &obj)
+{
+	return "TestObject{value=" + std::to_string(obj.value) +
+	       ", isDirty=" + (obj.isDirty ? "true" : "false") + "}";
+}
+// Convert TestObject to a string for debugging and test output
+inline std::string to_string(TestObject *obj)
+{
+	if (obj == nullptr)
+		return "nullptr";
+	return "TestObject{value=" + std::to_string(obj->value) +
+	       ", isDirty=" + (obj->isDirty ? "true" : "false") + "}";
+}
+}        // namespace std
 
 #include "choc_UnitTest.h"
 #include <format>
@@ -67,7 +92,6 @@ static void runTestOnMessageThread(std::function<void(const std::function<void()
 inline void testStringUtilities(choc::test::TestProgress &progress)
 {
 	CHOC_CATEGORY(Strings);
-
 
 	{
 		CHOC_TEST(Trimming)
@@ -397,6 +421,168 @@ inline void testTimers(choc::test::TestProgress &progress)
 		CHOC_EXPECT_TRUE(messageThread2);
 	}
 }
+
+inline void testDirtyList(choc::test::TestProgress &progress)
+{
+	CHOC_CATEGORY(DirtyList);
+
+	// Test 1: Initialization and empty state
+	// Use case: Setting up a DirtyList to manage audio processors that need to be
+	// flagged for processing when their parameters (e.g., value) change.
+	{
+		CHOC_TEST(InitializationAndEmptyState)
+
+		choc::fifo::DirtyList<TestObject> dirtyList;
+		std::vector<TestObject>           objects(3);        // Non-const objects
+		objects[0].value = 10;                               // Distinct values for debugging
+		objects[1].value = 20;
+		objects[2].value = 30;
+		// Pass non-const pointers to avoid constness issue
+		std::vector<TestObject *> objectPtrs = {&objects[0], &objects[1], &objects[2]};
+		auto                      handles    = dirtyList.initialise(objectPtrs);
+
+		// Verify setup
+		CHOC_EXPECT_EQ(dirtyList.areAnyObjectsDirty(), false);          // List should be empty
+		CHOC_EXPECT_EQ(dirtyList.popNextDirtyObject(), nullptr);        // No dirty objects
+		// Check isDirty flags
+		for (size_t i = 0; i < objects.size(); ++i)
+		{
+			CHOC_EXPECT_EQ(objects[i].isDirty, false);
+		}
+	}
+
+	// Test 2: Marking objects as dirty and popping them
+	// Use case: In a real-time audio thread, parameter changes (e.g., gain) trigger
+	// marking processors as dirty. A main thread processes these updates in order.
+	{
+		CHOC_TEST(MarkAndPop)
+
+		choc::fifo::DirtyList<TestObject> dirtyList;
+		std::vector<TestObject>           objects(3);
+		objects[0].value                     = 100;
+		objects[1].value                     = 200;
+		objects[2].value                     = 300;
+		std::vector<TestObject *> objectPtrs = {&objects[0], &objects[1], &objects[2]};
+		auto                      handles    = dirtyList.initialise(objectPtrs);
+
+		// Mark two objects as dirty
+		dirtyList.markAsDirty(handles[0]);        // First processor's gain changed
+		dirtyList.markAsDirty(handles[2]);        // Third processor's gain changed
+
+		CHOC_EXPECT_EQ(dirtyList.areAnyObjectsDirty(), true);        // List should have dirty objects
+		// isDirty flags unchanged by markAsDirty (DirtyList uses internal flags)
+		CHOC_EXPECT_EQ(objects[0].isDirty, false);
+		CHOC_EXPECT_EQ(objects[2].isDirty, false);
+
+		// Pop first dirty object
+		auto *obj1 = dirtyList.popNextDirtyObject();
+		CHOC_EXPECT_NE(obj1, nullptr);            // Expect a dirty object
+		CHOC_EXPECT_EQ(obj1, &objects[0]);        // Expect object 0
+
+		// Pop second dirty object
+		auto *obj2 = dirtyList.popNextDirtyObject();
+		CHOC_EXPECT_NE(obj2, nullptr);            // Expect a dirty object
+		CHOC_EXPECT_EQ(obj2, &objects[2]);        // Expect object 2
+
+		// Verify list is empty
+		CHOC_EXPECT_EQ(dirtyList.areAnyObjectsDirty(), false);          // List should be empty
+		CHOC_EXPECT_EQ(dirtyList.popNextDirtyObject(), nullptr);        // No more dirty objects
+	}
+
+	// Test 3: Marking the same object multiple times
+	// Use case: In a high-frequency real-time thread, a processor might be marked dirty
+	// repeatedly (e.g., rapid parameter tweaks). DirtyList queues it only once.
+	{
+		CHOC_TEST(MultipleMarks)
+
+		choc::fifo::DirtyList<TestObject> dirtyList;
+		std::vector<TestObject>           objects(2);
+		objects[0].value                     = 1;
+		objects[1].value                     = 2;
+		std::vector<TestObject *> objectPtrs = {&objects[0], &objects[1]};
+		auto                      handles    = dirtyList.initialise(objectPtrs);
+
+		// Mark same object multiple times
+		dirtyList.markAsDirty(handles[0]);
+		dirtyList.markAsDirty(handles[1]);
+		dirtyList.markAsDirty(handles[0]);
+
+		CHOC_EXPECT_EQ(dirtyList.areAnyObjectsDirty(), true);        // List should have one dirty object
+		auto *obj = dirtyList.popNextDirtyObject();
+		CHOC_EXPECT_NE(obj, nullptr);                                   // Expect a dirty object
+		CHOC_EXPECT_EQ(obj, &objects[0]);                               // Expect object 0
+		CHOC_EXPECT_EQ(dirtyList.popNextDirtyObject(), &objects[1]);        
+	}
+
+	// Test 4: Resetting the list
+	// Use case: On system reset (e.g., stopping audio playback), clear all dirty flags
+	// and the queue to prepare for a new session.
+	{
+		CHOC_TEST(Reset)
+
+		choc::fifo::DirtyList<TestObject> dirtyList;
+		std::vector<TestObject>           objects(2);
+		objects[0].value                     = 42;
+		objects[1].value                     = 43;
+		std::vector<TestObject *> objectPtrs = {&objects[0], &objects[1]};
+		auto                      handles    = dirtyList.initialise(objectPtrs);
+
+		// Mark objects as dirty
+		dirtyList.markAsDirty(handles[0]);
+		dirtyList.markAsDirty(handles[1]);
+		CHOC_EXPECT_EQ(dirtyList.areAnyObjectsDirty(), true);        // List should have dirty objects
+
+		// Reset the list
+		dirtyList.resetAll();
+		CHOC_EXPECT_EQ(dirtyList.areAnyObjectsDirty(), false);          // List should be empty
+		CHOC_EXPECT_EQ(dirtyList.popNextDirtyObject(), nullptr);        // No dirty objects
+		// Verify isDirty flags are reset
+		for (size_t i = 0; i < objects.size(); ++i)
+		{
+			CHOC_EXPECT_EQ(objects[i].isDirty, false);
+		}
+
+	}
+
+	// Test 5: Handling a large number of objects
+	// Use case: Managing many objects (e.g., MIDI controllers or UI elements) where
+	// only a subset needs processing, ensuring scalability.
+	{
+		CHOC_TEST(LargeList)
+
+		choc::fifo::DirtyList<TestObject> dirtyList;
+		std::vector<TestObject>           objects(1000);
+		for (size_t i = 0; i < objects.size(); ++i)
+			objects[i].value = static_cast<int>(i);        // Distinct values
+		std::vector<TestObject *> objectPtrs;
+		objectPtrs.reserve(1000);
+		for (auto &obj : objects)
+			objectPtrs.push_back(&obj);
+		auto handles = dirtyList.initialise(objectPtrs);
+
+		CHOC_EXPECT_EQ(handles.size(), 1000u);        // Expect 1000 handles
+
+		// Mark every 100th object
+		for (size_t i = 0; i < objects.size(); i += 100)
+			dirtyList.markAsDirty(handles[i]);
+
+		// Process dirty objects
+		size_t count = 0;
+		while (auto *obj = dirtyList.popNextDirtyObject())
+		{
+			CHOC_EXPECT_EQ(obj, &objects[count * 100]);        // Expect correct object
+			count++;
+		}
+		CHOC_EXPECT_EQ(count, 10u);                                   // Expect 10 dirty objects
+		CHOC_EXPECT_EQ(dirtyList.areAnyObjectsDirty(), false);        // List should be empty
+		// Verify isDirty flags
+		for (size_t i = 0; i < objects.size(); ++i)
+		{
+			CHOC_EXPECT_EQ(objects[i].isDirty, false);
+		}
+	}
+}
+
 //==============================================================================
 inline bool runAllTests(choc::test::TestProgress &progress, bool multithread)
 {
@@ -419,7 +605,8 @@ inline bool runAllTests(choc::test::TestProgress &progress, bool multithread)
 	    testFileWatcher,
 	    testStringUtilities,
 	    testFileUtilities,
-	    testTimers};
+	    testTimers,
+	    testDirtyList};
 
 	auto t = std::thread([&] {
 		if (multithread)
